@@ -1,6 +1,6 @@
 ARG DISTRIB_CODENAME="trixie"
 FROM debian:${DISTRIB_CODENAME}-slim AS build
-ARG NGINX_GPGKEY_PATH=/usr/share/keyrings/nginx-archive-keyring.gpg
+ENV NGINX_GPGKEY_PATH=/usr/share/keyrings/nginx-archive-keyring.gpg
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CFLAGS="-O3 -march=x86-64-v3 -mtune=generic -pipe -fno-plt -fstack-clash-protection"
 ENV CXXFLAGS="${CFLAGS}"
@@ -38,8 +38,8 @@ RUN         cd "$NTMPDIR" && apt-get -y --no-install-recommends install nginx \
             && make modules && cp -p objs/*.so /usr/lib/nginx/modules/
 RUN         nginx -v 2>&1 | sed -e 's/nginx /nginx_/' >/.version && echo "NDK: ${NDK_VERS}\nset_misc: ${SET_MISC_VERS}\nModSecurity-nginx: ${MS_NG_VERS}\nModSecurity: ${MS_VERS}" >> /.version
 
-FROM debian:${DISTRIB_CODENAME}-slim
 ARG DISTRIB_CODENAME
+FROM debian:${DISTRIB_CODENAME}-slim
 ARG MS_VERS
 ARG MS_NG_VERS
 ARG NDK_VERS
@@ -52,7 +52,8 @@ LABEL VERSION_set_misc="${SET_MISC_VERS}"
 LABEL VERSION_CRS="${CRS_VERSION}"
 ARG CRS_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
-COPY --from=build $NGINX_GPGKEY_PATH $NGINX_GPGKEY_PATH
+# Don't use a variable
+COPY --from=build /usr/share/keyrings/nginx-archive-keyring.gpg /usr/share/keyrings/nginx-archive-keyring.gpg
 COPY --from=build /etc/apt/sources.list.d/nginx.list /etc/apt/sources.list.d/nginx.list
 RUN apt-get update && apt-get -y --no-install-recommends install ca-certificates gnupg && apt-get update && \
     apt-get -yV --no-install-recommends install nginx curl libcurl4 libyajl2 liblua5.4-0 libfuzzy2 libgeoip1 libxml2 \
