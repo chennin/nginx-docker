@@ -7,3 +7,7 @@ systemctl --user daemon-reload
 systemctl --user enable --now nginx-build.timer
 systemctl --user start nginx-build.service
 ```
+
+Make a secret named CODEBERG_PACKAGE_RW
+
+Set environment
