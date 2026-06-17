@@ -8,7 +8,7 @@ apt-get install -y --no-install-recommends buildah netavark
 
 cd /tmp/nginx
 CONT_LATEST="${IMAGE_NAME}:latest"
-buildah --storage-driver="$STORAGE_DRIVER" \
+nice buildah --storage-driver="$STORAGE_DRIVER" \
         bud --isolation="$BUILDAH_ISOLATION" \
         --build-arg-file=argfile.conf \
         -t "$CONT_LATEST" .
