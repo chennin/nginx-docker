@@ -15,7 +15,7 @@ nice buildah --storage-driver="$STORAGE_DRIVER" \
 
 buildah --storage-driver $STORAGE_DRIVER from --pull=never --name version-finder "$CONT_LATEST"
 REV=$(date +"%Y%m%d")
-CONT_VER=$(buildah --storage-driver $STORAGE_DRIVER run version-finder sh -c "nginx -V 2>&1 | grep -oP '(?<=nginx version: nginx/)(.+)$'")-${REV}
+CONT_VER=$(buildah --storage-driver $STORAGE_DRIVER run version-finder sh -c "nginx -V 2>&1 | grep -oP '(?<=nginx version: nginx/)(.+)$'")_${REV}
 CONT_VER=${CONT_VER//[+~]/_}
 echo "Container version: ${CONT_VER}"
 
