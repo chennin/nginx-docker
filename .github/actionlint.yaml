@@ -1,0 +1,12 @@
+self-hosted-runner:
+  labels:
+    - codeberg-tiny
+    - codeberg-tiny-lazy
+    - codeberg-small
+    - codeberg-small-lazy
+    - codeberg-medium
+    - codeberg-medium-lazy
+paths:
+  .{forgejo,github}/workflows/**/*.{yml,yaml}:
+    ignore:
+      - 'unexpected key "enable-email-notifications".*'
