@@ -23,5 +23,7 @@ CONT_WITH_VER=${CONT_LATEST%%:*}:${CONT_VER}
 buildah --storage-driver $STORAGE_DRIVER tag "$CONT_LATEST" "${CONT_WITH_VER}"
 echo $(cat /run/secrets/CODEBERG_PACKAGE_RW) | buildah login --password-stdin -u ${ACTOR} codeberg.org
 
-buildah --storage-driver $STORAGE_DRIVER push "${CONT_LATEST}"
-buildah --storage-driver $STORAGE_DRIVER push "${CONT_WITH_VER}"
+echo Pushing "${CONT_LATEST}"
+buildah --debug --storage-driver $STORAGE_DRIVER push "${CONT_LATEST}"
+echo Pushing "${CONT_WITH_VER}"
+buildah --debug --storage-driver $STORAGE_DRIVER push "${CONT_WITH_VER}"
