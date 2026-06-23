@@ -3,10 +3,10 @@ ContainerName=nginx-build
 Image=index.docker.io/debian:trixie-slim
 Exec=sh -c "apt-get update && apt-get install -y --no-install-recommends git ca-certificates && \
      git clone https://codeberg.org/forbiddenlake/nginx.git /tmp/nginx && /tmp/nginx/build.sh"
-Environment=IMAGE_NAME=codeberg.org/forbiddenlake/nginx
+Environment=IMAGE_NAME=ghcr.io/forbiddenlake/nginx
 Environment=ACTOR=forbiddenlake
 Environment=NO_COLOR=true
-Secret=CODEBERG_PACKAGE_RW,type=mount
+Secret=GHCR_PACKAGE_RW,type=mount
 Volume=/etc/localtime:/etc/localtime:ro
 Tmpfs=/tmp
 LogDriver=journald
