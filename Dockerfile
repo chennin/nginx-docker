@@ -23,7 +23,7 @@ ARG MS_VERS
 RUN         cd "$NTMPDIR" \
             && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $MS_VERS https://github.com/owasp-modsecurity/ModSecurity && cd ModSecurity \
             && git submodule init && git submodule update --init --recursive \
-            && ./build.sh && ./configure --with-pcre2 --with-ssdeep && make && make install
+            && ./build.sh && ./configure --with-pcre2 --with-ssdeep && make -j $(( $(nproc) / 2 + 1 )) && make install
 ARG SET_MISC_VERS
 ARG NDK_VERS
 RUN         cd "$NTMPDIR" \
@@ -35,7 +35,7 @@ RUN         cd "$NTMPDIR" && apt-get -y --no-install-recommends install nginx \
             && apt-get source nginx && CARGS=$(nginx -V 2>&1 | grep "^configure arguments:" | cut -d' ' -f3-) \
             && NGINX_VERSION=$(nginx -V 2>&1 | grep "^nginx version:" | cut -d/ -f2) && cd "nginx-${NGINX_VERSION}" \
             && eval "./configure --add-dynamic-module=../ngx_devel_kit --add-dynamic-module=../set-misc-nginx-module --add-dynamic-module=../ModSecurity-nginx ${CARGS}" \
-            && make modules && cp -p objs/*.so /usr/lib/nginx/modules/
+            && make -j $(( $(nproc) / 2 + 1 )) modules && cp -p objs/*.so /usr/lib/nginx/modules/
 RUN         nginx -v 2>&1 | sed -e 's/nginx /nginx_/' >/.version && echo "NDK: ${NDK_VERS}\nset_misc: ${SET_MISC_VERS}\nModSecurity-nginx: ${MS_NG_VERS}\nModSecurity: ${MS_VERS}" >> /.version
 
 ARG DISTRIB_CODENAME
