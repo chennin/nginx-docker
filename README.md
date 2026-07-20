@@ -8,6 +8,6 @@ systemctl --user enable --now nginx-build.timer
 systemctl --user start nginx-build.service
 ```
 
-Make a secret named CODEBERG_PACKAGE_RW
+Make a secret named GHCR_PACKAGE_RW
 
 Set environment

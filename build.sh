@@ -15,15 +15,24 @@ nice buildah --storage-driver="$STORAGE_DRIVER" \
 
 buildah --storage-driver $STORAGE_DRIVER from --pull=never --name version-finder "$CONT_LATEST"
 REV=$(date +"%Y%m%d")
-CONT_VER=$(buildah --storage-driver $STORAGE_DRIVER run version-finder sh -c "nginx -V 2>&1 | grep -oP '(?<=nginx version: nginx/)(.+)$'")_${REV}
+NG_VER=$(buildah --storage-driver $STORAGE_DRIVER run version-finder sh -c "nginx -V 2>&1 | grep -oP '(?<=nginx version: nginx/)(.+)$'")
+CONT_VER="${NG_VER}_${REV}"
 CONT_VER=${CONT_VER//[+~]/_}
+# 1.30.4_20260720
 echo "Container version: ${CONT_VER}"
-
 CONT_WITH_VER=${CONT_LATEST%%:*}:${CONT_VER}
-buildah --storage-driver $STORAGE_DRIVER tag "$CONT_LATEST" "${CONT_WITH_VER}"
+echo "Container version with date: ${CONT_WITH_VER}"
+
 echo $(cat /run/secrets/GHCR_PACKAGE_RW) | buildah login --password-stdin -u ${ACTOR} ghcr.io
 
-echo Pushing "${CONT_LATEST}"
+# 1.30.4_202607204
+# 1.30.4
+# 1.30
+for tag in "${CONT_VER}" "${NG_VER}" "${NG_VER%.*}"; do
+  buildah --storage-driver $STORAGE_DRIVER tag "${CONT_LATEST}" "${CONT_LATEST%%:*}:${tag}"
+  echo Pushing "${tag}"
+  buildah --storage-driver $STORAGE_DRIVER push "${CONT_LATEST%%:*}:${tag}"
+done
+# latest
+echo Pushing latest
 buildah --storage-driver $STORAGE_DRIVER push "${CONT_LATEST}"
-echo Pushing "${CONT_WITH_VER}"
-buildah --storage-driver $STORAGE_DRIVER push "${CONT_WITH_VER}"
