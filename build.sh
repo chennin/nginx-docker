@@ -23,7 +23,7 @@ echo "Container version: ${CONT_VER}"
 CONT_WITH_VER=${CONT_LATEST%%:*}:${CONT_VER}
 echo "Container version with date: ${CONT_WITH_VER}"
 
-echo $(cat /run/secrets/GHCR_PACKAGE_RW) | buildah login --password-stdin -u "${ACTOR}" ghcr.io
+cat /run/secrets/GHCR_PACKAGE_RW | buildah login --password-stdin -u "${ACTOR}" "${IMAGE_NAME%%/*}"
 
 # 1.30.4_202607204
 # 1.30.4
