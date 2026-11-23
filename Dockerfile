@@ -2,7 +2,7 @@ ARG DISTRIB_CODENAME="trixie"
 FROM debian:${DISTRIB_CODENAME}-slim AS build
 ENV NGINX_GPGKEY_PATH=/usr/share/keyrings/nginx-archive-keyring.gpg
 ENV DEBIAN_FRONTEND=noninteractive
-ENV CFLAGS="-O3 -march=x86-64-v3 -mtune=generic -pipe -fno-plt -fstack-clash-protection"
+ENV CFLAGS="-O3 -march=x86-64-v3 -mtune=generic -pipe -fno-plt -fhardened"
 ENV CXXFLAGS="${CFLAGS}"
 ENV NGINX_REPO="https://nginx.org/packages/debian/"
 USER root
