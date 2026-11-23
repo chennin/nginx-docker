@@ -22,7 +22,7 @@ jobs:
           apt-get update && \
           apt-get install -y --no-install-recommends buildah netavark ca-certificates
 
-          CONT_LATEST="${{ secrets.REGISTRY }}/nginx:latest"
+          CONT_LATEST="${{ secrets.REGISTRY }}/${{ env.FORGEJO_REPOSITORY_OWNER }}/nginx:latest"
           buildah --storage-driver="$STORAGE_DRIVER" \
             bud --isolation="$BUILDAH_ISOLATION" \
             --build-arg-file=argfile.conf \
