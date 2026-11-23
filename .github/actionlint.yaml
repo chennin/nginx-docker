@@ -6,6 +6,7 @@ self-hosted-runner:
     - codeberg-small-lazy
     - codeberg-medium
     - codeberg-medium-lazy
+    - debian-trixie
 paths:
   .{forgejo,github}/workflows/**/*.{yml,yaml}:
     ignore:
