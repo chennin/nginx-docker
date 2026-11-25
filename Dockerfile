@@ -26,15 +26,17 @@ RUN         cd "$NTMPDIR" \
             && ./build.sh && ./configure --with-pcre2 --with-ssdeep && make -j $(( $(nproc) / 2 + 1 )) && make install
 ARG SET_MISC_VERS
 ARG NDK_VERS
+ARG ECHO_VERS
 RUN         cd "$NTMPDIR" \
-            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $SET_MISC_VERS https://github.com/openresty/set-misc-nginx-module.git && cd set-misc-nginx-module && cd .. \
-            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $NDK_VERS https://github.com/vision5/ngx_devel_kit.git && cd ngx_devel_kit
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $SET_MISC_VERS https://github.com/openresty/set-misc-nginx-module.git \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $NDK_VERS https://github.com/vision5/ngx_devel_kit.git \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $ECHO_VERS https://github.com/openresty/echo-nginx-module.git
 ARG MS_NG_VERS
 RUN         cd "$NTMPDIR" && apt-get -y --no-install-recommends install nginx \
-            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $MS_NG_VERS https://github.com/owasp-modsecurity/ModSecurity-nginx.git && cd ModSecurity-nginx && cd .. \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $MS_NG_VERS https://github.com/owasp-modsecurity/ModSecurity-nginx.git \
             && apt-get source nginx && CARGS=$(nginx -V 2>&1 | grep "^configure arguments:" | cut -d' ' -f3-) \
             && NGINX_VERSION=$(nginx -V 2>&1 | grep "^nginx version:" | cut -d/ -f2) && cd "nginx-${NGINX_VERSION}" \
-            && eval "./configure --add-dynamic-module=../ngx_devel_kit --add-dynamic-module=../set-misc-nginx-module --add-dynamic-module=../ModSecurity-nginx ${CARGS}" \
+            && eval "./configure --add-dynamic-module=../ngx_devel_kit --add-dynamic-module=../set-misc-nginx-module --add-dynamic-module=../ModSecurity-nginx --add-dynamic-module=../echo-nginx-module ${CARGS}" \
             && make -j $(( $(nproc) / 2 + 1 )) modules && cp -p objs/*.so /usr/lib/nginx/modules/
 RUN         nginx -v 2>&1 | sed -e 's/nginx /nginx_/' >/.version && echo "NDK: ${NDK_VERS}\nset_misc: ${SET_MISC_VERS}\nModSecurity-nginx: ${MS_NG_VERS}\nModSecurity: ${MS_VERS}" >> /.version
 
