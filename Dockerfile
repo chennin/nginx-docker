@@ -18,7 +18,7 @@ RUN         echo "deb [signed-by=$NGINX_GPGKEY_PATH] $NGINX_REPO $DISTRIB_CODENA
             && apt-get install -y --no-install-recommends git bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk \
                                git iputils-ping libcurl4-openssl-dev libexpat1-dev libgeoip-dev liblmdb-dev libssl-dev libtool libxml2 \
                                libxml2-dev libyajl-dev locales liblua5.4-dev pkg-config wget zlib1g-dev libxslt-dev libgd-dev libpcre2-dev \
-                               libfuzzy-dev
+                               libfuzzy-dev libluajit-5.1-dev luajit
 ARG MS_VERS
 RUN         cd "$NTMPDIR" \
             && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $MS_VERS https://github.com/owasp-modsecurity/ModSecurity && cd ModSecurity \
@@ -27,18 +27,25 @@ RUN         cd "$NTMPDIR" \
 ARG SET_MISC_VERS
 ARG NDK_VERS
 ARG ECHO_VERS
+ARG LUA_VERS
+ARG RESTY_CORE_VERS
+ARG RESTY_LRU_VERS
 RUN         cd "$NTMPDIR" \
             && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $SET_MISC_VERS https://github.com/openresty/set-misc-nginx-module.git \
             && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $NDK_VERS https://github.com/vision5/ngx_devel_kit.git \
-            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $ECHO_VERS https://github.com/openresty/echo-nginx-module.git
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $ECHO_VERS https://github.com/openresty/echo-nginx-module.git \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $LUA_VERS https://github.com/openresty/lua-nginx-module \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $RESTY_CORE_VERS https://github.com/openresty/lua-resty-core.git && cd lua-resty-core && make install LUA_LIB_DIR=/usr/local/share/lua/5.1 && cd .. \
+            && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $RESTY_LRU_VERS https://github.com/openresty/lua-resty-lrucache.git && cd lua-resty-lrucache && make install LUA_LIB_DIR=/usr/local/share/lua/5.1
 ARG MS_NG_VERS
 RUN         cd "$NTMPDIR" && apt-get -y --no-install-recommends install nginx \
             && git clone --depth=1  -c advice.detachedHead=false --single-branch --branch $MS_NG_VERS https://github.com/owasp-modsecurity/ModSecurity-nginx.git \
             && apt-get source nginx && CARGS=$(nginx -V 2>&1 | grep "^configure arguments:" | cut -d' ' -f3-) \
             && NGINX_VERSION=$(nginx -V 2>&1 | grep "^nginx version:" | cut -d/ -f2) && cd "nginx-${NGINX_VERSION}" \
-            && eval "./configure --add-dynamic-module=../ngx_devel_kit --add-dynamic-module=../set-misc-nginx-module --add-dynamic-module=../ModSecurity-nginx --add-dynamic-module=../echo-nginx-module ${CARGS}" \
+            && export LUAJIT_LIB=/usr/lib/x86_64-linux-gnu && export LUAJIT_INC=/usr/include/luajit-2.1 \
+            && eval "./configure --add-dynamic-module=../ngx_devel_kit --add-dynamic-module=../set-misc-nginx-module --add-dynamic-module=../ModSecurity-nginx --add-dynamic-module=../echo-nginx-module --add-dynamic-module=../lua-nginx-module ${CARGS}" \
             && make -j $(( $(nproc) / 2 + 1 )) modules && cp -p objs/*.so /usr/lib/nginx/modules/
-RUN         nginx -v 2>&1 | sed -e 's/nginx /nginx_/' >/.version && echo "NDK: ${NDK_VERS}\nset_misc: ${SET_MISC_VERS}\nModSecurity-nginx: ${MS_NG_VERS}\nModSecurity: ${MS_VERS}" >> /.version
+RUN         nginx -v 2>&1 | sed -e 's/nginx /nginx_/' >/.version && echo "NDK: ${NDK_VERS}\nset_misc: ${SET_MISC_VERS}\nModSecurity-nginx: ${MS_NG_VERS}\nModSecurity: ${MS_VERS}\necho-nginx-module: ${ECHO_VERS}\nlua-nginx-module: ${LUA_VERS}\n" >> /.version
 
 ARG DISTRIB_CODENAME
 FROM debian:${DISTRIB_CODENAME}-slim
@@ -58,7 +65,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 COPY --from=build /usr/share/keyrings/nginx-archive-keyring.gpg /usr/share/keyrings/nginx-archive-keyring.gpg
 COPY --from=build /etc/apt/sources.list.d/nginx.list /etc/apt/sources.list.d/nginx.list
 RUN apt-get update && apt-get -y --no-install-recommends install ca-certificates gnupg && apt-get update && \
-    apt-get -yV --no-install-recommends install nginx curl libcurl4 libyajl2 liblua5.4-0 libfuzzy2 libgeoip1 libxml2 \
+    apt-get -yV --no-install-recommends install nginx curl libcurl4 libyajl2 liblua5.4-0 libfuzzy2 libgeoip1 libxml2 libluajit-5.1-2 lua-zlib \
     && apt-get purge -y --auto-remove && rm -rf /var/lib/apt/* && rm -rf /var/cache/debconf/* && find /var/log -type f -delete \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
@@ -66,6 +73,7 @@ RUN mkdir -p /usr/local/coreruleset && curl -sL --output /tmp/${CRS_VERSION}.tar
     tar xf /tmp/${CRS_VERSION}.tar.gz --strip-components=1 -C /usr/local/coreruleset && rm /tmp/${CRS_VERSION}.tar.gz
 COPY --from=build /usr/local/modsecurity/lib /usr/local/modsecurity/lib
 COPY --from=build /usr/lib/nginx/modules/* /usr/lib/nginx/modules/
+COPY --from=build /usr/local/share/lua/5.1 /usr/local/share/lua/5.1
 COPY --from=build /tmp/custom-build/ModSecurity/unicode.mapping /etc/nginx/
 COPY --from=build /.version /.version
 RUN echo "Coreruleset: ${CRS_VERSION}" >> /.version
